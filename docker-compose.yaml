@@ -12,8 +12,8 @@ services:
               capabilities: ["gpu"]
               count: all
     container_name: gaussian_splatting
-    # ports:
-    #   - "8080:8080"
+    ports:
+       - "9876:9876"
     volumes:
       - ./ingest:/workspace/ingest
       - ./output:/workspace/out

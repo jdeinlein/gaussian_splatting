@@ -3,8 +3,8 @@
 services:
   gaussian-splatting:
     image: judein/splatting_container_brush:amd64
-    # ports:
-    #   - "8080:8080"
+    ports:
+       - "9876:9876"
     volumes:
       - ./ingest:/workspace/ingest
       - ./output:/workspace/out
