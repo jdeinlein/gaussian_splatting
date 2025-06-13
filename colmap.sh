@@ -224,4 +224,4 @@ fi
 
 # Always run brush at the end
 echo "Running brush on Dataset"
-brush "$COLMAP_WORKSPACE" --export-every 500 --eval-save-to-disk --export-path "/workspace/out"
+brush "$COLMAP_WORKSPACE" --export-every 500 --eval-save-to-disk --enable-rerun --export-path "/workspace/out"
