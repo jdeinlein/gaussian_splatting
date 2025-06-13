@@ -1,4 +1,4 @@
-# Gaussian Splatting
+# Containerized automatic Gaussian Splatting
 
 This repository contains the docker based pipeline for Gaussian Splatting. The pipeline is based on [COLMAP](https://colmap.github.io/) and Arthur Brusssee's  [brush](https://github.com/ArthurBrussee/brush). 
 
