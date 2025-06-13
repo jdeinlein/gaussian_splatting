@@ -8,3 +8,5 @@ services:
     volumes:
       - ./ingest:/workspace/ingest
       - ./output:/workspace/out
+    devices:
+      - /dev/dri/:/dev/dri/
