@@ -1,0 +1,19 @@
+# Docker Compose configuration for Gaussian Splatting
+
+services:
+  gaussian-splatting:
+    image: judein/splatting_container_brush:amd64
+    # GPU support is not available in this image
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: ["gpu"]
+              count: all
+    container_name: gaussian_splatting
+    # ports:
+    #   - "8080:8080"
+    volumes:
+      - ./ingest:/workspace/ingest
+      - ./output:/workspace/out

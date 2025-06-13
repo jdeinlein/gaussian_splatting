@@ -1,0 +1,10 @@
+# Docker Compose configuration for Gaussian Splatting
+
+services:
+  gaussian-splatting:
+    image: judein/splatting_container_brush:amd64
+    # ports:
+    #   - "8080:8080"
+    volumes:
+      - ./ingest:/workspace/ingest
+      - ./output:/workspace/out
