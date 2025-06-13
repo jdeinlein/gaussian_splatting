@@ -9,11 +9,14 @@ FROM builder AS builder-amd64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
 ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
 ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV CUDSS_ARCH=amd64
+ENV DEBIAN_FRONTEND=noninteractive
 
 FROM builder AS builder-arm64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
 ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
 ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV CUDSS_ARCH=arm64
 
 # Select the appropriate builder based on TARGETARCH
 FROM builder-${TARGETARCH} AS builder-final
@@ -26,6 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && apt-get install -y \
         curl \
+        wget \
+        unzip \
         build-essential \
         git \
         libx11-xcb-dev \
@@ -33,8 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libwayland-dev \
         libxrandr-dev \
         libegl1-mesa-dev \
-        cmake \
         ninja-build \
+        libopencv-dev \
         libboost-program-options-dev \
         libboost-graph-dev \
         libboost-system-dev \
@@ -51,12 +56,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         qtbase5-dev \
         libqt5opengl5-dev \
         libcgal-dev \
-        libceres-dev \
         libcurl4-openssl-dev \
         ccache \
+        libsuitesparse-dev \
+        libblas-dev \
     && rm -rf /var/lib/apt/lists/*
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 
 # set env
 ENV CUDA_ROOT=/usr/local/cuda
@@ -65,14 +69,66 @@ ENV RUST_LOG=info
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/root/.cargo/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
-# Build and install COLMAP.
+# install latest cmake
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ noble main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Abseil first with explicit version
+RUN git clone https://github.com/abseil/abseil-cpp.git && \
+    cd abseil-cpp && \
+    git checkout 20240116.1 && \
+    mkdir build && \
+    cd build && \
+    cmake .. \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DABSL_PROPAGATE_CXX_STD=ON && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
+# Install CUDSS based on architecture
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
+    dpkg -i cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
+    cp /var/cudss-local-repo-ubuntu2404-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+    apt-get update && \
+    apt-get -y install cudss && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build and install Ceres Solver with CUDA support and explicit Abseil config
+RUN git clone https://ceres-solver.googlesource.com/ceres-solver && \
+    cd ceres-solver && \
+    mkdir build && \
+    cd build && \
+    cmake .. \
+        -DCMAKE_CUDA_ARCHITECTURES="native" \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DCUDA=ON \
+        -DCUDSS=ON \
+        -DMINIGLOG=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -Dabsl_DIR=/usr/local/lib/cmake/absl \
+        -Dabsl_VERSION=20240116.1 && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
+# Build and install COLMAP with CUDA support
 RUN git clone https://github.com/colmap/colmap.git && \
     cd colmap && \
     git fetch https://github.com/colmap/colmap.git && \
     mkdir build && \
     cd build && \
     cmake .. -GNinja \
-        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCUDA_ENABLED=ON && \
     ninja && \
     ninja install
 
@@ -85,6 +141,9 @@ RUN git clone https://github.com/colmap/glomap && \
         -DCMAKE_INSTALL_PREFIX=/usr/local && \
     ninja && \
     ninja install
+
+# Install rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 
 # Install brush
 RUN git clone https://github.com/ArthurBrussee/brush.git && \
@@ -100,11 +159,13 @@ FROM engine AS engine-amd64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
 ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
 ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV CUDSS_ARCH=amd64
 
 FROM engine AS engine-arm64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
 ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
 ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV CUDSS_ARCH=arm64
 
 # Select the appropriate engine based on TARGETARCH
 FROM engine-${TARGETARCH} AS runtime
@@ -126,24 +187,27 @@ RUN mkdir -p /workspace/ingest
 # Define volumes
 VOLUME ["/workspace/ingest"]
 VOLUME ["/workspace/colmap_workspace"]
-VOLUME ["/workspace/nerfstudio_dataset"]
+VOLUME ["/workspace/out"]
 VOLUME ["/workspace/XDG"]
 
 ENV QT_QPA_PLATFORM=offscreen
 ENV XDG_RUNTIME_DIR=/workspace/XDG
 ENV CUDA_ROOT=/usr/local/cuda
 ENV CUDA_PATH=$CUDA_ROOT
-ENV RUST_LOG=info
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
-# There is probably a way to optimize those runtime dependencies but Ubuntu is really weird with package names
+
+# Install runtime dependencies including CUDA and cuDNN
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ${NV_CUDNN_PACKAGE} \
     imagemagick \
     wget \
+    jq \
     ffmpeg \
     mesa-vulkan-drivers \
     libvulkan1 \
     libgl1 \
+    libegl1 \
     libglu1-mesa \
     libgl1-mesa-dev \
     libglew-dev \
@@ -162,19 +226,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmetis-dev \
     libgoogle-glog-dev \
     libgmock-dev \
+    libsuitesparse-dev \
+    libblas-dev \
     libsqlite3-dev \
     libglew-dev \
-    libvulkan1 \
     qtbase5-dev \
     libqt5opengl5-dev \
     libcgal-dev \
-    libceres-dev \
     libcurl4-openssl-dev \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+        apt-get install -y --no-install-recommends \
+            intel-opencl-icd \
+            libmfx1 \
+            libmfx-tools \
+            nvidia-driver-550 \
+            nvidia-utils-550; \
+       fi \
+    && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
+
+# Install CUDSS based on architecture
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
+    dpkg -i cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
+    cp /var/cudss-local-repo-ubuntu2404-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+    apt-get update && \
+    apt-get -y install cudss && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
-#RUN chmod 700 /workspace/XDG
-
+ENV RUST_LOG=info
 ENTRYPOINT ["sh","/workspace/colmap.sh"]
-
