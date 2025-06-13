@@ -1,0 +1,24 @@
+name: Build and Push Docker Image
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'Dockerfile'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Docker Login
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u octocat
+--password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          docker build . -t docker.pkg.github.com/${{ github.repository }}/your_image:$(date
++%s)
+          docker push docker.pkg.github.com/${{ github<｜begin▁of▁sentence｜>en.GITHUB_TOKEN
+}}
