@@ -331,7 +331,7 @@ process_data() {
     brush "$COLMAP_WORKSPACE" \
         --export-every 500 \
         --eval-save-to-disk \
-        --enable-rerun \
+        --rerun-enabled \
         --export-path "$NERFSTUDIO_OUTPUT"
 }
 
