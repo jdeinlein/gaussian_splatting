@@ -237,8 +237,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libqt5opengl5-dev \
     libcgal-dev \
     libcurl4-openssl-dev \       
-    nvidia-driver-570 \
-    nvidia-utils-570 \
+    nvidia-driver-550 \
+    nvidia-utils-550 \
     && if [ "$TARGETARCH" = "amd64" ]; then \
         apt-get install -y --no-install-recommends \
             intel-opencl-icd \
