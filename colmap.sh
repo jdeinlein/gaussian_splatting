@@ -335,17 +335,42 @@ process_data() {
         --export-path "$NERFSTUDIO_OUTPUT"
 }
 
-# Daemon mode
+# Daemon Mode
 run_daemon() {
     echo "Starting in daemon mode. Checking every $DAEMON_INTERVAL seconds."
-    mkdir -p "$INGEST_DIR/processed"
+    
+    # Create processed directory with proper context
+    local PROCESSED_DIR="$INGEST_DIR/processed"
+    if [ ! -d "$PROCESSED_DIR" ]; then
+        echo "Creating processed directory with SELinux context..."
+        mkdir -Z "$PROCESSED_DIR" 2>/dev/null || {
+            # Fallback if -Z not supported
+            mkdir -p "$PROCESSED_DIR"
+            if command -v chcon &>/dev/null; then
+                chcon -R -t container_file_t "$PROCESSED_DIR" || true
+            fi
+        }
+    fi
+
     while true; do
         if [ -n "$(ls -A "$INGEST_DIR" 2>/dev/null)" ]; then
             echo "New data detected in $INGEST_DIR, starting processing..."
+            
+            # Create timestamped directory with proper context
+            local TIMESTAMP_DIR="$PROCESSED_DIR/$(date +%Y%m%d-%H%M%S)"
+            mkdir -Z "$TIMESTAMP_DIR" 2>/dev/null || {
+                mkdir -p "$TIMESTAMP_DIR"
+                if command -v chcon &>/dev/null; then
+                    chcon -R -t container_file_t "$TIMESTAMP_DIR" || true
+                fi
+            }
+
             process_data
-            echo "Processing complete. Archiving input data."
-            mkdir -p "$INGEST_DIR/processed/$(date +%Y%m%d-%H%M%S)"
-            mv "$INGEST_DIR"/* "$INGEST_DIR/processed/$(date +%Y%m%d-%H%M%S)/" 2>/dev/null
+            
+            echo "Processing complete. Moving input data to $TIMESTAMP_DIR"
+            mv -Z "$INGEST_DIR"/* "$TIMESTAMP_DIR/" 2>/dev/null || \
+                mv "$INGEST_DIR"/* "$TIMESTAMP_DIR/" 2>/dev/null || true
+                
             rm -f "$COLMAP_WORKSPACE"/.processed_*
         fi
         sleep "$DAEMON_INTERVAL"
