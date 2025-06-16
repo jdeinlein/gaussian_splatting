@@ -240,7 +240,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nvidia-driver-550 \
     nvidia-utils-550 \
     libmfx1 \
-    libmfx1-tools\
+    libmfx-tools\
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
 
