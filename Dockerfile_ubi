@@ -1,0 +1,248 @@
+# Define arguments first
+ARG TARGETARCH
+
+# Builder stage
+FROM nvidia/cuda:12.8.1-devel-ubi9 AS builder
+
+# Architecture-specific settings
+FROM builder AS builder-amd64
+ENV NV_CUDNN_VERSION=9.8.0.87-1
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12-0-${NV_CUDNN_VERSION}.*
+ENV CUDSS_ARCH=x86_64
+
+FROM builder AS builder-arm64
+ENV NV_CUDNN_VERSION=9.8.0.87-1
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12-0-${NV_CUDNN_VERSION}.*
+ENV CUDSS_ARCH=aarch64
+
+# Select the appropriate builder based on TARGETARCH
+FROM builder-${TARGETARCH} AS builder-final
+
+LABEL maintainer="NVIDIA CORPORATION <cudatools@nvidia.com>"
+LABEL com.nvidia.cudnn.version="${NV_CUDNN_VERSION}"
+
+# Install base dependencies
+RUN dnf install -y --nodocs \
+    https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y --nodocs \
+        ${NV_CUDNN_PACKAGE} \
+        curl \
+        wget \
+        unzip \
+        git \
+        make \
+        gcc-c++ \
+        ninja-build \
+        libX11-devel \
+        libxkbcommon-devel \
+        wayland-devel \
+        libXrandr-devel \
+        mesa-libEGL-devel \
+        opencv-devel \
+        boost-devel \
+        eigen3-devel \
+        flann-devel \
+        freeimage-devel \
+        metis-devel \
+        glog-devel \
+        gtest-devel \
+        gmock-devel \
+        sqlite-devel \
+        glew-devel \
+        vulkan \
+        qt5-qtbase-devel \
+        qt5-qtbase-gui \
+        qt5-qtsvg-devel \
+        cgal-devel \
+        libcurl-devel \
+        suitesparse-devel \
+        blas-devel \
+        cmake \
+    && dnf clean all
+
+# set env
+ENV CUDA_ROOT=/usr/local/cuda
+ENV CUDA_PATH=$CUDA_ROOT
+ENV RUST_LOG=info
+ENV PATH=$CUDA_ROOT/nvvm/lib64:/root/.cargo/bin:$PATH
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+
+# Install Abseil with explicit version
+RUN git clone https://github.com/abseil/abseil-cpp.git && \
+    cd abseil-cpp && \
+    git checkout 20240116.1 && \
+    mkdir build && \
+    cd build && \
+    cmake .. \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DABSL_PROPAGATE_CXX_STD=ON && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
+# Install CUDSS based on architecture
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-rhel9-0.5.0-0.5.0-1.${CUDSS_ARCH}.rpm && \
+    rpm -i cudss-local-repo-rhel9-0.5.0-0.5.0-1.${CUDSS_ARCH}.rpm && \
+    cp /var/cudss-local-repo-rhel9-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+    dnf install -y --nodocs cudss && \
+    dnf clean all
+
+# Build and install Ceres Solver with CUDA support and explicit Abseil config
+RUN git clone https://ceres-solver.googlesource.com/ceres-solver && \
+    cd ceres-solver && \
+    mkdir build && \
+    cd build && \
+    cmake .. \
+        -DCMAKE_CUDA_ARCHITECTURES="native" \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DCUDA=ON \
+        -DCUDSS=ON \
+        -DMINIGLOG=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -Dabsl_DIR=/usr/local/lib/cmake/absl \
+        -Dabsl_VERSION=20240116.1 && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
+
+# Build and install COLMAP with CUDA support
+RUN git clone https://github.com/colmap/colmap.git && \
+    cd colmap && \
+    git fetch https://github.com/colmap/colmap.git && \
+    mkdir build && \
+    cd build && \
+    cmake .. -GNinja \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCUDA_ENABLED=ON && \
+    ninja && \
+    ninja install
+
+# Build and install GLOMAP
+RUN git clone https://github.com/colmap/glomap && \
+    cd glomap && \
+    mkdir build && \
+    cd build && \
+    cmake .. -GNinja \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    ninja && \
+    ninja install
+
+# Install rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+
+# Install brush
+RUN git clone https://github.com/ArthurBrussee/brush.git && \
+    cd brush && \
+    cargo build --release && \
+    cp target/release/brush_app /usr/local/bin/brush
+
+RUN cargo install rerun-cli
+
+# Runtime stage
+FROM nvidia/cuda:12.8.1-runtime-ubi9 AS engine
+
+# Architecture-specific settings
+FROM engine AS engine-amd64
+ENV NV_CUDNN_VERSION=9.8.0.87-1
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12-0-${NV_CUDNN_VERSION}.*
+ENV CUDSS_ARCH=x86_64
+
+FROM engine AS engine-arm64
+ENV NV_CUDNN_VERSION=9.8.0.87-1
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12-0-${NV_CUDNN_VERSION}.*
+ENV CUDSS_ARCH=aarch64
+
+# Select the appropriate engine based on TARGETARCH
+FROM engine-${TARGETARCH} AS runtime
+
+LABEL maintainer="NVIDIA CORPORATION <cudatools@nvidia.com>"
+LABEL com.nvidia.cudnn.version="${NV_CUDNN_VERSION}"
+
+# Copy built artifacts from builder
+COPY --from=builder-final /usr/local/bin/colmap /usr/local/bin/colmap
+COPY --from=builder-final /usr/local/bin/glomap /usr/local/bin/glomap
+COPY --from=builder-final /usr/local/lib /usr/local/lib
+COPY --from=builder-final /usr/local/include /usr/local/include
+COPY --from=builder-final /usr/local/bin/brush /usr/local/bin/brush
+COPY --from=builder-final /root/.cargo/bin/rerun /usr/local/bin/rerun
+
+# Set working directory
+WORKDIR /workspace
+RUN mkdir -p /workspace/ingest
+
+# Define volumes
+VOLUME ["/workspace/ingest"]
+VOLUME ["/workspace/colmap_workspace"]
+VOLUME ["/workspace/out"]
+VOLUME ["/workspace/XDG"]
+
+ENV QT_QPA_PLATFORM=offscreen
+ENV XDG_RUNTIME_DIR=/workspace/XDG
+ENV CUDA_ROOT=/usr/local/cuda
+ENV CUDA_PATH=$CUDA_ROOT
+ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+
+# Install runtime dependencies
+RUN dnf install -y --nodocs \
+    https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y --nodocs \
+        ${NV_CUDNN_PACKAGE} \
+        ImageMagick \
+        wget \
+        jq \
+        ffmpeg \
+        mesa-vulkan-drivers \
+        vulkan \
+        mesa-libGL \
+        mesa-libEGL \
+        mesa-libGLU \
+        glew-devel \
+        osmesa-devel \
+        libX11-devel \
+        libxkbcommon-devel \
+        wayland-devel \
+        libXrandr-devel \
+        mesa-libEGL-devel \
+        boost-devel \
+        eigen3-devel \
+        flann-devel \
+        freeimage-devel \
+        metis-devel \
+        glog-devel \
+        gmock-devel \
+        suitesparse-devel \
+        blas-devel \
+        sqlite-devel \
+        glew-devel \
+        qt5-qtbase-devel \
+        qt5-qtbase-gui \
+        qt5-qtsvg-devel \
+        cgal-devel \
+        libcurl-devel \
+        nvidia-driver \
+        nvidia-driver-cuda \
+        libmfx \
+    && dnf clean all
+
+# Install CUDSS based on architecture
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-rhel9-0.5.0-0.5.0-1.${CUDSS_ARCH}.rpm && \
+    rpm -i cudss-local-repo-rhel9-0.5.0-0.5.0-1.${CUDSS_ARCH}.rpm && \
+    cp /var/cudss-local-repo-rhel9-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+    dnf install -y --nodocs cudss && \
+    dnf clean all
+
+COPY colmap.sh /workspace/colmap.sh
+RUN chmod +x /workspace/colmap.sh
+ENV RUST_LOG=info
+ENTRYPOINT ["sh","/workspace/colmap.sh"]
