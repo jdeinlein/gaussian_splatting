@@ -236,14 +236,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qtbase5-dev \
     libqt5opengl5-dev \
     libcgal-dev \
-    libcurl4-openssl-dev \
+    libcurl4-openssl-dev \       
+    nvidia-driver-570 \
+    nvidia-utils-570 \
     && if [ "$TARGETARCH" = "amd64" ]; then \
         apt-get install -y --no-install-recommends \
             intel-opencl-icd \
             libmfx1 \
-            libmfx-tools \
-            nvidia-driver-550 \
-            nvidia-utils-550; \
+            libmfx-tools; \
        fi \
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
