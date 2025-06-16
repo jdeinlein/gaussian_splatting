@@ -239,12 +239,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \       
     nvidia-driver-550 \
     nvidia-utils-550 \
-    && if [ "$TARGETARCH" = "amd64" ]; then \
-        apt-get install -y --no-install-recommends \
-            intel-opencl-icd \
-            libmfx1 \
-            libmfx-tools; \
-       fi \
+    libmfx1 \
+    libmfx1-tools\
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
 
