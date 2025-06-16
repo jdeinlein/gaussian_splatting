@@ -256,4 +256,4 @@ RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_install
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
 ENV RUST_LOG=info
-ENTRYPOINT ["sh","/workspace/colmap.sh"]
+ENTRYPOINT ["sh","/workspace/colmap.sh -d"]

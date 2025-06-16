@@ -1,6 +1,6 @@
 #!/bin/bash
 # COLMAP 3D Reconstruction Pipeline with CLI and Daemon Modes
-# Version 2.0 - Enhanced Feature Extraction
+# Version 2.1 - Fixed GPU auto-detection
 
 # Ensure we're running in bash
 if [ -z "$BASH_VERSION" ]; then
@@ -13,7 +13,7 @@ COLMAP_WORKSPACE="/workspace/colmap_workspace"
 NERFSTUDIO_OUTPUT="/workspace/nerfstudio_dataset"
 MODE="batch"
 CONFIG_FILE=""
-USE_GPU="auto"
+USE_GPU="auto"  # Default to auto-detection
 RENDER_PIPELINE="default"
 SCALE="default"
 DAEMON_INTERVAL=10
@@ -43,10 +43,10 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --gpu)
-            if [[ "$2" == "true" || "$2" == "false" ]]; then
+            if [[ "$2" == "true" || "$2" == "false" || "$2" == "auto" ]]; then
                 USE_GPU="$2"
             else
-                echo "Invalid value for --gpu: $2. Must be 'true' or 'false'."
+                echo "Invalid value for --gpu: $2. Must be 'true', 'false', or 'auto'."
                 exit 1
             fi
             shift 2
@@ -75,7 +75,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --ingest-dir DIR     Set ingest directory"
             echo "  --colmap-workspace DIR  Set COLMAP workspace"
             echo "  --nerfstudio-output DIR Set NeRFstudio output directory"
-            echo "  --gpu true|false     Force enable/disable GPU"
+            echo "  --gpu MODE           Set GPU mode (true/false/auto)"
             echo "  --render-pipeline PIPELINE  Set render pipeline (fast/high_quality/default)"
             echo "  --scale SCALE        Set scale (large/default)"
             echo "  --config FILE        JSON configuration file"
@@ -94,7 +94,6 @@ done
 if [[ -n "$CONFIG_FILE" && -f "$CONFIG_FILE" ]]; then
     echo "Loading configuration from $CONFIG_FILE"
     JSON_CONFIG=$(cat "$CONFIG_FILE")
-    # Parse JSON using jq if available
     if command -v jq &> /dev/null; then
         INGEST_DIR=$(jq -r '.ingest_dir // empty' <<< "$JSON_CONFIG" || echo "$INGEST_DIR")
         COLMAP_WORKSPACE=$(jq -r '.colmap_workspace // empty' <<< "$JSON_CONFIG" || echo "$COLMAP_WORKSPACE")
@@ -107,7 +106,7 @@ if [[ -n "$CONFIG_FILE" && -f "$CONFIG_FILE" ]]; then
         INGEST_DIR=$(grep -oP '"ingest_dir"\s*:\s*"\K[^"]+' "$CONFIG_FILE" || echo "$INGEST_DIR")
         COLMAP_WORKSPACE=$(grep -oP '"colmap_workspace"\s*:\s*"\K[^"]+' "$CONFIG_FILE" || echo "$COLMAP_WORKSPACE")
         NERFSTUDIO_OUTPUT=$(grep -oP '"nerfstudio_output"\s*:\s*"\K[^"]+' "$CONFIG_FILE" || echo "$NERFSTUDIO_OUTPUT")
-        USE_GPU=$(grep -oP '"use_gpu"\s*:\s*\K(true|false)' "$CONFIG_FILE" || echo "$USE_GPU")
+        USE_GPU=$(grep -oP '"use_gpu"\s*:\s*"\K(auto|true|false)' "$CONFIG_FILE" || echo "$USE_GPU")
         RENDER_PIPELINE=$(grep -oP '"render_pipeline"\s*:\s*"\K[^"]+' "$CONFIG_FILE" || echo "$RENDER_PIPELINE")
         SCALE=$(grep -oP '"scale"\s*:\s*"\K[^"]+' "$CONFIG_FILE" || echo "$SCALE")
     fi
@@ -123,9 +122,17 @@ CURRENT_DATE=$(date +"%Y-%m-%d")
 
 # Enhanced GPU detection
 detect_gpu() {
-    if [[ "$USE_GPU" == "true" ]]; then return 0; fi
-    if [[ "$USE_GPU" == "false" ]]; then return 1; fi
-
+    # If user specified true/false, respect their choice
+    if [[ "$USE_GPU" == "true" ]]; then
+        echo "GPU forced enabled by user"
+        return 0
+    elif [[ "$USE_GPU" == "false" ]]; then
+        echo "GPU forced disabled by user"
+        return 1
+    fi
+    
+    # Auto-detection (only runs if USE_GPU="auto")
+    echo "Detecting GPU availability..."
     if command -v nvidia-smi &>/dev/null && nvidia-smi -L &>/dev/null; then
         echo "NVIDIA GPU detected via nvidia-smi"
         return 0
@@ -153,10 +160,7 @@ detect_gpu() {
 # Processing functions
 needs_processing() {
     local step=$1
-    local check_file=$2
-    [ -f "$COLMAP_WORKSPACE/.processed_$step" ] && return 1
-    [ -n "$check_file" ] && [ ! -e "$check_file" ] && return 0
-    return 0
+    ! [ -f "$COLMAP_WORKSPACE/.processed_$step" ]
 }
 
 mark_processed() {
@@ -182,19 +186,20 @@ process_data() {
     echo "NeRF Output: $NERFSTUDIO_OUTPUT"
     echo "Render Pipeline: $RENDER_PIPELINE"
     echo "Scale: $SCALE"
+    echo "GPU Mode: $USE_GPU"
 
     # Create directories
     mkdir -p "$IMAGE_DIR" "$SPARSE_DIR" "$DENSE_DIR" "$UNDISTORTED_DIR"
 
-    # GPU detection
+    # GPU detection and setup
+    local GPU_AVAILABLE=false
     if detect_gpu; then
-        USE_GPU=true
-        echo "GPU acceleration enabled"
+        GPU_AVAILABLE=true
+        echo "GPU acceleration will be used"
     else
-        USE_GPU=false
-        echo "CUDA acceleration disabled - using CPU only"
+        GPU_AVAILABLE=false
+        echo "Using CPU-only processing"
     fi
-    export USE_GPU
 
     # Skip to brush if sparse exists
     if [ -d "$SPARSE_DIR" ] && [ -n "$(ls -A "$SPARSE_DIR")" ]; then
@@ -221,7 +226,7 @@ process_data() {
     fi
 
     # Video extraction
-    if needs_processing "video_extraction" "$IMAGE_DIR/frame_0001.jpg"; then
+    if needs_processing "video_extraction"; then
         echo "Extracting frames from videos..."
         find "$INGEST_DIR" -type f \( -iname "*.mp4" -o -iname "*.mov" \) -print0 |
             xargs -0 -P $(nproc) -I{} ffmpeg -i "{}" -r 1 "$IMAGE_DIR/frame_%04d.jpg"
@@ -229,7 +234,7 @@ process_data() {
     fi
 
     # Image organization
-    if needs_processing "image_organization" "$IMAGE_DIR"; then
+    if needs_processing "image_organization"; then
         echo "Organizing images..."
         find "$INGEST_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.JPG" -o -iname "*.png" \) -exec cp {} "$IMAGE_DIR" \;
         mark_processed "image_organization"
@@ -242,14 +247,14 @@ process_data() {
     fi
 
     # Database creation
-    if needs_processing "database_creation" "$DB_PATH"; then
+    if needs_processing "database_creation"; then
         echo "Creating COLMAP database..."
         colmap database_creator --database_path "$DB_PATH"
         mark_processed "database_creation"
     fi
 
     # Feature extraction with quality presets
-    if needs_processing "feature_extraction" "$DB_PATH"; then
+    if needs_processing "feature_extraction"; then
         echo "Running feature extraction with COLMAP..."
         
         # Set default parameters
@@ -257,7 +262,7 @@ process_data() {
         local MAX_FEATURES=5000
         
         # GPU-specific quality presets
-        if [ "$USE_GPU" = true ]; then
+        if $GPU_AVAILABLE; then
             case "$RENDER_PIPELINE" in
                 "fast")
                     PEAK_THRESHOLD=0.02
@@ -284,22 +289,22 @@ process_data() {
             --SiftExtraction.peak_threshold $PEAK_THRESHOLD \
             --SiftExtraction.max_num_features $MAX_FEATURES \
             --SiftExtraction.max_image_size 2000 \
-            --SiftExtraction.use_gpu $USE_GPU
+            --SiftExtraction.use_gpu $GPU_AVAILABLE
             
         mark_processed "feature_extraction"
     fi
 
     # Feature matching
-    if needs_processing "feature_matching" "$DB_PATH"; then
+    if needs_processing "feature_matching"; then
         echo "Running feature matching..."
         colmap exhaustive_matcher \
             --database_path "$DB_PATH" \
-            --SiftMatching.use_gpu $USE_GPU
+            --SiftMatching.use_gpu $GPU_AVAILABLE
         mark_processed "feature_matching"
     fi
 
     # Sparse reconstruction
-    if needs_processing "sparse_reconstruction" "$SPARSE_DIR/0"; then
+    if needs_processing "sparse_reconstruction"; then
         echo "Running sparse reconstruction..."
         case "$SCALE" in
             "large")
@@ -333,16 +338,17 @@ process_data() {
 # Daemon mode
 run_daemon() {
     echo "Starting in daemon mode. Checking every $DAEMON_INTERVAL seconds."
+    mkdir -p "$INGEST_DIR/processed"
     while true; do
         if [ -n "$(ls -A "$INGEST_DIR" 2>/dev/null)" ]; then
             echo "New data detected in $INGEST_DIR, starting processing..."
             process_data
-            echo "Processing complete. Resetting for next batch."
+            echo "Processing complete. Archiving input data."
+            mkdir -p "$INGEST_DIR/processed/$(date +%Y%m%d-%H%M%S)"
+            mv "$INGEST_DIR"/* "$INGEST_DIR/processed/$(date +%Y%m%d-%H%M%S)/" 2>/dev/null
             rm -f "$COLMAP_WORKSPACE"/.processed_*
-            mv "$INGEST_DIR"/* "$INGEST_DIR/processed_$(date +%s)/" 2>/dev/null
-        else
-            sleep "$DAEMON_INTERVAL"
         fi
+        sleep "$DAEMON_INTERVAL"
     done
 }
 
