@@ -151,6 +151,8 @@ RUN git clone https://github.com/ArthurBrussee/brush.git && \
     cargo build --release && \
     cp target/release/brush_app /usr/local/bin/brush
 
+RUN cargo install rerun-cli
+
 # Runtime stage
 FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS engine
 
@@ -179,6 +181,7 @@ COPY --from=builder-final /usr/local/bin/glomap /usr/local/bin/glomap
 COPY --from=builder-final /usr/local/lib /usr/local/lib
 COPY --from=builder-final /usr/local/include /usr/local/include
 COPY --from=builder-final /usr/local/bin/brush /usr/local/bin/brush
+COPY --from=builder-final /root/.cargo/bin/rerun /usr/local/bin/rerun
 
 # Set working directory
 WORKDIR /workspace
@@ -253,7 +256,6 @@ RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_install
     apt-get -y install cudss && \
     rm -rf /var/lib/apt/lists/*
 
-RUN cargo install rerun
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
 ENV RUST_LOG=info
