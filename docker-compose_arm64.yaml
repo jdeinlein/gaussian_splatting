@@ -8,6 +8,8 @@ services:
        - "9876:9876"
     volumes:
       - ./ingest:/workspace/ingest
-      - ./output:/workspace/out
+      - ./result:/workspace/out
+      - ./colmap:/workspace/colmap_workspace
+
     devices:
       - /dev/dri/:/dev/dri/

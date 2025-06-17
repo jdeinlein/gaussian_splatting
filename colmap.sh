@@ -148,11 +148,6 @@ detect_gpu() {
         return 0
     fi
 
-    if ldconfig -p | grep -q libcuda.so || [ -f /usr/local/cuda/version.txt ]; then
-        echo "CUDA libraries detected"
-        return 0
-    fi
-
     echo "No compatible GPU detected"
     return 1
 }
