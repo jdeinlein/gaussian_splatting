@@ -200,7 +200,7 @@ ENV CUDA_PATH=$CUDA_ROOT
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
-SHELL ["/bin/bash", "-c"] 
+#SHELL ["/bin/bash", "-c"] 
 # Install runtime dependencies including CUDA and cuDNN
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ${NV_CUDNN_PACKAGE} \
