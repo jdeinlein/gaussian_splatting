@@ -1,7 +1,7 @@
 name: Build and Push Docker Image
 on:
   push:
-    branches: [ master ]
+    branches: [ main, API ]
     paths:
       - 'Dockerfile'
 
@@ -12,9 +12,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install Docker Buildx
+        run: |
+          if ! command -v docker-buildx &> /dev/null; then
+            curl -fsL https://github.com/docker/buildx/releases/latest/download/buildx-$(uname)-amd64 -o /usr/local/bin/docker-buildx
+            chmod +x /usr/local/bin/docker-buildx
+          fi
+
       - name: Docker Login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u ${{ github.actor }}
-      - name: Build and push Docker image
+
+      - name: Build and push for amd64
         run: |
-          docker build . -t docker.pkg.github.com/${{ github.repository }}/your_image:$(date +%s)
-          docker push docker.pkg.github.com/${{ github.repository }}/your_image:$(date +%s)
+          docker buildx build --platform linux/amd64 --tag docker.pkg.github.com/${{ github.repository }}/splatting_container:latest-amd64 . && \
+          docker push docker.pkg.github-than.com/${{ github.repository }}/splatting_container:latest-amd64
+
+      - name: Build and push for arm64
+        run: |
+          docker buildx build --platform linux/arm64 --tag docker.pkg.github.com/${{ github.repository }}/splatting_container:latest-arm64 . && \
+          docker push docker.pkg.github.com/${{ github.repository }}/splatting_container:latest-arm64
