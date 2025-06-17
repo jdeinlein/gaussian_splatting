@@ -151,6 +151,8 @@ RUN git clone https://github.com/ArthurBrussee/brush.git && \
     cargo build --release && \
     cp target/release/brush_app /usr/local/bin/brush
 
+RUN cargo install rerun-cli
+
 # Runtime stage
 FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS engine
 
@@ -179,6 +181,7 @@ COPY --from=builder-final /usr/local/bin/glomap /usr/local/bin/glomap
 COPY --from=builder-final /usr/local/lib /usr/local/lib
 COPY --from=builder-final /usr/local/include /usr/local/include
 COPY --from=builder-final /usr/local/bin/brush /usr/local/bin/brush
+COPY --from=builder-final /root/.cargo/bin/rerun /usr/local/bin/rerun
 
 # Set working directory
 WORKDIR /workspace
@@ -233,15 +236,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qtbase5-dev \
     libqt5opengl5-dev \
     libcgal-dev \
-    libcurl4-openssl-dev \
-    && if [ "$TARGETARCH" = "amd64" ]; then \
-        apt-get install -y --no-install-recommends \
-            intel-opencl-icd \
-            libmfx1 \
-            libmfx-tools \
-            nvidia-driver-550 \
-            nvidia-utils-550; \
-       fi \
+    libcurl4-openssl-dev \       
+    nvidia-driver-550 \
+    nvidia-utils-550 \
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
 
