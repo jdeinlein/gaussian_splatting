@@ -259,10 +259,13 @@ ENV RUST_LOG=info
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-dev \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages
-RUN pip install fastapi uvicorn python-multipart pydantic
+RUN python3 -m venv fastapi-env &&\
+    source fastapi-env/bin/activate &&\
+    pip install fastapi uvicorn python-multipart pydantic
 
 # Copy API file
 COPY ./api/api.py /workspace/api.py
