@@ -183,4 +183,6 @@ ipython_config.py
 #   git rm -r .ipynb_checkpoints/
 
 .DS_Store
-
+colmap/
+ingest/
+result/
