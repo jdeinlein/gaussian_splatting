@@ -263,10 +263,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
+# Create and activate virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Install Python packages
-RUN python3 -m venv fastapi-env &&\
-    source fastapi-env/bin/activate &&\
-    pip install fastapi uvicorn python-multipart pydantic
+RUN pip install fastapi uvicorn python-multipart pydantic
 
 # Copy API file
 COPY ./api/api.py /workspace/api.py
