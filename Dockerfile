@@ -239,8 +239,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \       
     nvidia-driver-550 \
     nvidia-utils-550 \
-    libmfx1 \
-    libmfx-tools\
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
 
