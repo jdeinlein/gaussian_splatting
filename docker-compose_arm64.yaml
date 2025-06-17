@@ -2,7 +2,7 @@
 
 services:
   gaussian-splatting:
-    image: judein/splatting_container_brush:latest
+    image: judein/splatting_container_brush:arm64
     container_name: gaussian_splatting
     ports:
        - "9876:9876"
