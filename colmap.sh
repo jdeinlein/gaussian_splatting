@@ -377,6 +377,7 @@ run_daemon() {
     done
 }
 
+
 # Execution based on mode
 case "$MODE" in
     "daemon")
@@ -390,3 +391,4 @@ case "$MODE" in
         exit 1
         ;;
 esac
+

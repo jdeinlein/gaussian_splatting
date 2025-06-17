@@ -4,8 +4,10 @@ services:
   gaussian-splatting:
     image: judein/splatting_container_brush:latest
     container_name: gaussian_splatting
-    # ports:
-    #   - "8080:8080"
+    ports:
+       - "9876:9876"
     volumes:
       - ./ingest:/workspace/ingest
       - ./output:/workspace/out
+    devices:
+      - /dev/dri/:/dev/dri/
