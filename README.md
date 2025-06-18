@@ -1,3 +1,5 @@
+[![Build and Push Docker Image](https://github.com/jdeinlein/Gaussian_Splatting/actions/workflows/docker-publish.yml/badge.svg?branch=main)](https://github.com/jdeinlein/Gaussian_Splatting/actions/workflows/docker-publish.yml)
+
 # Containerized automatic Gaussian Splatting
 
 This repository contains the docker based pipeline for Gaussian Splatting. The pipeline is based on [COLMAP](https://colmap.github.io/) and Arthur Brussee's  [brush](https://github.com/ArthurBrussee/brush). 
