@@ -20,8 +20,9 @@ jobs:
           curl -fsL https://github.com/docker/buildx/releases/download/v0.25.0/buildx-v0.25.0.linux-amd64 > /usr/local/bin/docker-buildx
             chmod +x /usr/local/bin/docker-buildx
 
-      - name: Docker Login
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u ${{ github.actor }}
+      - name: Log in to Docker registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
 
       - name: Build and push for amd64
         run: |
