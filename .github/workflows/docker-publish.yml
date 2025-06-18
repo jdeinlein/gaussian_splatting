@@ -14,10 +14,8 @@ jobs:
 
       - name: Install Docker Buildx
         run: |
-          if ! command -v docker-buildx &> /dev/null; then
             curl -fsL https://github.com/docker/buildx/releases/latest/download/buildx-$(uname)-amd64 -o /usr/local/bin/docker-buildx
             chmod +x /usr/local/bin/docker-buildx
-          fi
 
       - name: Docker Login
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com -u ${{ github.actor }}
