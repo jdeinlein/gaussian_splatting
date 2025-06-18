@@ -200,6 +200,7 @@ ENV CUDA_PATH=$CUDA_ROOT
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
+#SHELL ["/bin/bash", "-c"] 
 # Install runtime dependencies including CUDA and cuDNN
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ${NV_CUDNN_PACKAGE} \
@@ -253,4 +254,27 @@ RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_install
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
 ENV RUST_LOG=info
-ENTRYPOINT ["sh","/workspace/colmap.sh"]
+#ENTRYPOINT ["sh","/workspace/colmap.sh"]
+
+# Install Python and FastAPI dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-dev \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create and activate virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install Python packages
+RUN pip install fastapi uvicorn python-multipart pydantic
+
+# Copy API file
+COPY ./api/api.py /workspace/api.py
+
+# Add a new entrypoint script that can run either the API or COLMAP
+COPY api_entrypoint.sh /workspace/entrypoint.sh
+RUN chmod +x /workspace/entrypoint.sh
+ENTRYPOINT ["sh","/workspace/entrypoint.sh"]

@@ -16,4 +16,3 @@ Example:
 ````
 podman run --gpus=all -v COLMAP:/workspace/colmap_workspace docker.io/judein/splatting_container_brush
 ````
-
