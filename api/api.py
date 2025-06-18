@@ -24,7 +24,7 @@ app.add_middleware(
 WORKSPACE_BASE = "/workspace"
 INGEST_DIR = os.path.join(WORKSPACE_BASE, "ingest")
 COLMAP_WORKSPACE = os.path.join(WORKSPACE_BASE, "colmap_workspace")
-NERFSTUDIO_OUTPUT = os.path.join(WORKSPACE_BASE, "nerfstudio_dataset")
+NERFSTUDIO_OUTPUT = os.path.join(WORKSPACE_BASE, "out")
 PROCESSING_JOBS = {}
 
 # Models
