@@ -4,6 +4,8 @@ on:
     branches: [ main, API ]
     paths:
       - 'Dockerfile'
+on:
+  workflow_dispatch:
 
 jobs:
   build-and-push:
