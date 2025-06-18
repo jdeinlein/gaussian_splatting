@@ -129,7 +129,6 @@ RUN git clone https://github.com/colmap/colmap.git && \
     cmake .. -GNinja \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
         -DCUDA_ENABLED=ON && \
-	    -DGUI_ENABLED=OFF && \
     ninja && \
     ninja install
 
@@ -140,7 +139,6 @@ RUN git clone https://github.com/colmap/glomap && \
     cd build && \
     cmake .. -GNinja \
         -DCMAKE_INSTALL_PREFIX=/usr/local && \
-	    -DGUI_ENABLED=OFF && \
     ninja && \
     ninja install
 
