@@ -186,3 +186,4 @@ ipython_config.py
 colmap/
 ingest/
 result/
+*.swp
