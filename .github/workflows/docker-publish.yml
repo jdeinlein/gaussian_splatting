@@ -14,7 +14,7 @@ jobs:
 
       - name: Install Docker Buildx
         run: |
-            curl -fsL https://github.com/docker/buildx/releases/latest/download/buildx-$(uname)-amd64 -o /usr/local/bin/docker-buildx
+            curl -fsL https://github.com/docker/buildx/releases/download/v0.25.0/buildx-v0.25.0.linux-amd64 -o /usr/local/bin/docker-buildx
             chmod +x /usr/local/bin/docker-buildx
 
       - name: Docker Login
