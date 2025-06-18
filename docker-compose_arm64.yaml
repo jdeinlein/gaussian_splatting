@@ -2,10 +2,11 @@
 
 services:
   gaussian-splatting:
-    image: judein/splatting_container_brush:arm64
+    image: docker.pkg.github.com/splatting_container:latest-arm64
     container_name: gaussian_splatting
     ports:
        - "9876:9876"
+       - "8000:8000"
     volumes:
       - ./ingest:/workspace/ingest
       - ./result:/workspace/out
