@@ -31,7 +31,7 @@ PROCESSING_JOBS = {}
 class ProcessingRequest(BaseModel):
     input_path: str  # Path to input directory or file
     config: Optional[dict] = None
-    mode: str = "batch"  # or "daemon"
+    mode: str = "daemon"  # or "batch"
     gpu: str = "auto"  # "true", "false", or "auto"
     render_pipeline: str = "default"  # "fast", "high_quality", "default"
     scale: str = "default"  # "large", "default"
