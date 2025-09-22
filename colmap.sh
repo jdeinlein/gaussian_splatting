@@ -284,7 +284,7 @@ process_data() {
             --SiftExtraction.peak_threshold $PEAK_THRESHOLD \
             --SiftExtraction.max_num_features $MAX_FEATURES \
             --SiftExtraction.max_image_size 2000 \
-            --SiftExtraction.use_gpu $GPU_AVAILABLE
+            --FeatureExtraction.use_gpu $GPU_AVAILABLE
             
         mark_processed "feature_extraction"
     fi
@@ -294,7 +294,7 @@ process_data() {
         echo "Running feature matching..."
         colmap exhaustive_matcher \
             --database_path "$DB_PATH" \
-            --SiftMatching.use_gpu $GPU_AVAILABLE
+            --FeatureMatching.use_gpu $GPU_AVAILABLE
         mark_processed "feature_matching"
     fi
 
