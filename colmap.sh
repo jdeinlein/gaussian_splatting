@@ -10,8 +10,8 @@ fi
 # Default paths and variables
 INGEST_DIR="/workspace/ingest"
 COLMAP_WORKSPACE="/workspace/colmap_workspace"
-NERFSTUDIO_OUTPUT="/workspace/nerfstudio_dataset"
-MODE="batch"
+NERFSTUDIO_OUTPUT="/workspace/out"
+MODE="daemon"
 CONFIG_FILE=""
 USE_GPU="auto"  # Default to auto-detection
 RENDER_PIPELINE="default"
@@ -224,7 +224,7 @@ process_data() {
     if needs_processing "video_extraction"; then
         echo "Extracting frames from videos..."
         find "$INGEST_DIR" -type f \( -iname "*.mp4" -o -iname "*.mov" \) -print0 |
-            xargs -0 -P $(nproc) -I{} ffmpeg -i "{}" -r 1 "$IMAGE_DIR/frame_%04d.jpg"
+            xargs -0 -P $(nproc) -I{} bash -c 'video="$0"; output_dir="$1"; base=$(basename "$video"); base="${base%.*}"; ffmpeg -i "$video" -r 1 "$output_dir/${base}_%04d.jpg"' {} "$IMAGE_DIR"
         mark_processed "video_extraction"
     fi
 
