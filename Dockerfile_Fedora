@@ -157,16 +157,11 @@ RUN cargo install rerun-cli
 # STAGE 2: Final Image (Replaces the final runtime/application stage)
 # ====================================================================
 
-FROM fedora:42 AS runtime
+FROM fedora:41 AS runtime
 # Install final application runtime dependencies
 ENV DNF_CMD="dnf install -y --setopt=tsflags=nodocs"
-RUN ${DNF_CMD} 'Development Tools' 'C Development Tools and Libraries'
-RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora42/$(uname -m)/cuda-fedora41.repo \
-    && dnf clean all \
-    && dnf module disable nvidia-driver \
-    && dnf config-manager setopt cuda-fedora41-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig \
-    && dnf -y install cuda-toolkit
-
+RUN dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm -y
+RUN dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda -y
 
 RUN ${DNF_CMD} \
     libX11-devel \
@@ -176,8 +171,13 @@ RUN ${DNF_CMD} \
     vulkan-tools \
     vulkan-loader \
     glslc \
-    imagemagick \
+    ImageMagick \
+    liblas-devel \
+    boost \
+    freeimage \
+    lapack \
     ffmpeg \
+    python3-pip \
     && dnf clean all
 
 # Copy built artifacts from builder
@@ -205,8 +205,21 @@ ENV CUDA_PATH=$CUDA_ROOT
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
-# Copy and setup application files
+# Create and activate virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install Python packages
+RUN pip install fastapi uvicorn python-multipart pydantic
+
+# Copy API file
+COPY ./api/api.py /workspace/api.py
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
 ENV RUST_LOG=info
-#ENTRYPOINT ["sh","/workspace/colmap.sh"]
+
+# Add a new entrypoint script that can run either the API or COLMAP
+COPY api_entrypoint.sh /workspace/entrypoint.sh
+RUN chmod +x /workspace/entrypoint.sh
+ENTRYPOINT ["sh","/workspace/entrypoint.sh"]
