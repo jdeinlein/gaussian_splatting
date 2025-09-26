@@ -160,6 +160,7 @@ RUN cargo install rerun-cli
 FROM fedora:42 AS runtime
 # Install final application runtime dependencies
 ENV DNF_CMD="dnf install -y --setopt=tsflags=nodocs"
+RUN ${DNF_CMD} 'Development Tools' 'C Development Tools and Libraries'
 RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora42/$(uname -m)/cuda-fedora41.repo \
     && dnf clean all \
     && dnf module disable nvidia-driver \
