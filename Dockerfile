@@ -2,20 +2,14 @@
 ARG TARGETARCH
 
 # Builder stage
-FROM nvidia/cuda:12.8.1-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:13.0.1-devel-ubuntu24.04 AS builder
 
 # Architecture-specific settings
 FROM builder AS builder-amd64
-ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=amd64
 ENV DEBIAN_FRONTEND=noninteractive
 
 FROM builder AS builder-arm64
-ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=arm64
 
 # Select the appropriate builder based on TARGETARCH
@@ -25,8 +19,6 @@ LABEL maintainer="NVIDIA CORPORATION <cudatools@nvidia.com>"
 LABEL com.nvidia.cudnn.version="${NV_CUDNN_VERSION}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${NV_CUDNN_PACKAGE} \
-    && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && apt-get install -y \
         curl \
         wget \
@@ -93,9 +85,9 @@ RUN git clone https://github.com/abseil/abseil-cpp.git && \
     ldconfig
 
 # Install CUDSS based on architecture
-RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
-    dpkg -i cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
-    cp /var/cudss-local-repo-ubuntu2404-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.7.1/local_installers/cudss-local-repo-ubuntu2404-0.7.1_0.7.1-1_${CUDSS_ARCH}.deb && \
+    dpkg -i cudss-local-repo-ubuntu2404-0.7.1_0.7.1-1_${CUDSS_ARCH}.deb && \
+    cp /var/cudss-local-repo-ubuntu2404-0.7.1/cudss-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && \
     apt-get -y install cudss && \
     rm -rf /var/lib/apt/lists/*
@@ -154,19 +146,19 @@ RUN git clone https://github.com/ArthurBrussee/brush.git && \
 RUN cargo install rerun-cli
 
 # Runtime stage
-FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS engine
+FROM nvidia/cuda:13.0.1-runtime-ubuntu24.04 AS engine
 
 # Architecture-specific settings
 FROM engine AS engine-amd64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-13
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-13=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=amd64
 
 FROM engine AS engine-arm64
 ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-12
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
+ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-13
+ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-13=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=arm64
 
 # Select the appropriate engine based on TARGETARCH
@@ -200,10 +192,9 @@ ENV CUDA_PATH=$CUDA_ROOT
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
-#SHELL ["/bin/bash", "-c"] 
+#SHELL ["/bin/bash", "-c"]
 # Install runtime dependencies including CUDA and cuDNN
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${NV_CUDNN_PACKAGE} \
     imagemagick \
     wget \
     jq \
@@ -237,10 +228,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qtbase5-dev \
     libqt5opengl5-dev \
     libcgal-dev \
-    libcurl4-openssl-dev \       
-    nvidia-driver-550 \
-    nvidia-utils-550 \
-    && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
+    libcurl4-openssl-dev \
+    nvidia-driver-580 \
+    #nvidia-utils-580 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install CUDSS based on architecture
