@@ -204,7 +204,7 @@ process_data() {
     if [ -d "$SPARSE_DIR" ] && [ -n "$(ls -A "$SPARSE_DIR")" ]; then
         echo "Found existing sparse reconstruction, proceeding to brush..."
         brush_app "$COLMAP_WORKSPACE" \
-            --export-every 500 \
+            --export-every 5000 \
             --eval-save-to-disk \
             --export-path "$NERFSTUDIO_OUTPUT"
         return 0
@@ -328,7 +328,7 @@ process_data() {
     # Final processing with Brush
     echo "Running Brush for NeRF dataset generation..."
     brush_app "$COLMAP_WORKSPACE" \
-        --export-every 500 \
+        --export-every 5000 \
         --eval-save-to-disk \
         --export-path "$NERFSTUDIO_OUTPUT"
 
