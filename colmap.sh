@@ -6,12 +6,15 @@
 if [ -z "$BASH_VERSION" ]; then
     exec bash "$0" "$@"
 fi
-
+# START LOGGING
+LOG_FILE="/workspace/colmap_process.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+echo "Pipeline execution started at $(date)"
 # Default paths and variables
 INGEST_DIR="/workspace/ingest"
 COLMAP_WORKSPACE="/workspace/colmap_workspace"
 NERFSTUDIO_OUTPUT="/workspace/out"
-MODE="daemon"
+MODE="batch"
 CONFIG_FILE=""
 USE_GPU="auto"  # Default to auto-detection
 RENDER_PIPELINE="default"
@@ -175,6 +178,7 @@ extract_frames() {
 
 # Main processing function
 process_data() {
+    local START_TIMESTAMP=$(date +%s)
     echo "Starting processing in ${MODE} mode"
     echo "Ingest Dir: $INGEST_DIR"
     echo "COLMAP Workspace: $COLMAP_WORKSPACE"
@@ -199,7 +203,7 @@ process_data() {
     # Skip to brush if sparse exists
     if [ -d "$SPARSE_DIR" ] && [ -n "$(ls -A "$SPARSE_DIR")" ]; then
         echo "Found existing sparse reconstruction, proceeding to brush..."
-        brush "$COLMAP_WORKSPACE" \
+        brush_app "$COLMAP_WORKSPACE" \
             --export-every 500 \
             --eval-save-to-disk \
             --export-path "$NERFSTUDIO_OUTPUT"
@@ -311,8 +315,8 @@ process_data() {
                     --Mapper.ba_refine_principal_point 1
                 ;;
             *)
-                echo "Using GLOMAP mapper"
-                glomap mapper \
+                echo "Using COLMAP global mapper"
+                colmap mapper \
                     --database_path "$DB_PATH" \
                     --image_path "$IMAGE_DIR" \
                     --output_path "$SPARSE_DIR"
@@ -323,11 +327,55 @@ process_data() {
 
     # Final processing with Brush
     echo "Running Brush for NeRF dataset generation..."
-    brush "$COLMAP_WORKSPACE" \
+    brush_app "$COLMAP_WORKSPACE" \
         --export-every 500 \
         --eval-save-to-disk \
-        --rerun-enabled \
         --export-path "$NERFSTUDIO_OUTPUT"
+
+    # Pass the start time to the generator
+    generate_metrics "$START_TIMESTAMP"
+}
+
+generate_metrics() {
+    local start_time=$1
+    local end_time=$(date +%s)
+    local runtime_seconds=$((end_time - start_time))
+    
+    # Format runtime (HH:MM:SS)
+    local duration=$(printf '%02d:%02d:%02d' $((runtime_seconds/3600)) $((runtime_seconds%3600/60)) $((runtime_seconds%60)))
+
+    local output_yaml="$NERFSTUDIO_OUTPUT/metrics.yaml"
+    echo "Generating metrics to $output_yaml..."
+
+    # 1. Count Aligned Cameras
+    local cameras_aligned=$(colmap model_analyzer --path "$SPARSE_DIR/0" 2>/dev/null | grep "Registered images" | awk '{print $3}')
+    : ${cameras_aligned:=0}
+
+    # 2. Count Points Amount
+    local point_count=$(colmap model_analyzer --path "$SPARSE_DIR/0" 2>/dev/null | grep "Points" | awk '{print $2}')
+    : ${point_count:=0}
+
+    # 3. File Size
+    local splat_file=$(find "$NERFSTUDIO_OUTPUT" -name "*.ply" -o -name "*.splat" | head -n 1)
+    local file_size="0MB"
+    if [ -f "$splat_file" ]; then
+        file_size=$(du -h "$splat_file" | cut -f1)
+    fi
+
+    # Write to YAML
+    cat <<EOF > "$output_yaml"
+reconstruction_metrics:
+  date: "$CURRENT_DATE"
+  runtime: "$duration"
+  runtime_seconds: $runtime_seconds
+  cameras_aligned: $cameras_aligned
+  splat_points: $point_count
+  output_file_size: "$file_size"
+  config:
+    pipeline_mode: "$RENDER_PIPELINE"
+    scale: "$SCALE"
+    gpu_enabled: "$USE_GPU"
+EOF
 }
 
 # Daemon Mode

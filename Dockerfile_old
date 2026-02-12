@@ -6,16 +6,10 @@ FROM nvidia/cuda:13.0.1-devel-ubuntu24.04 AS builder
 
 # Architecture-specific settings
 FROM builder AS builder-amd64
-ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-13
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-13=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=amd64
 ENV DEBIAN_FRONTEND=noninteractive
 
 FROM builder AS builder-arm64
-ENV NV_CUDNN_VERSION=9.8.0.87-1
-ENV NV_CUDNN_PACKAGE_NAME=libcudnn9-cuda-13
-ENV NV_CUDNN_PACKAGE=libcudnn9-cuda-12=${NV_CUDNN_VERSION}
 ENV CUDSS_ARCH=arm64
 
 # Select the appropriate builder based on TARGETARCH
@@ -25,8 +19,6 @@ LABEL maintainer="NVIDIA CORPORATION <cudatools@nvidia.com>"
 LABEL com.nvidia.cudnn.version="${NV_CUDNN_VERSION}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${NV_CUDNN_PACKAGE} \
-    && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && apt-get install -y \
         curl \
         wget \
@@ -50,14 +42,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgoogle-glog-dev \
         libgtest-dev \
         libgmock-dev \
+        libeigen3-dev \
+        libopenimageio-dev \
+        libmetis-dev \
+        libgoogle-glog-dev \
+        libgtest-dev \
+        libsqlite3-dev \
         libsqlite3-dev \
         libglew-dev \
         libvulkan1 \
-        qtbase5-dev \
-        libqt5opengl5-dev \
+        qt6-base-dev \
+        libqt6opengl6-dev \
+        libqt6openglwidgets6 \
         libcgal-dev \
+        libmkl-full-dev \
         libcurl4-openssl-dev \
         ccache \
+        openimageio-tools \
         libsuitesparse-dev \
         libblas-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -93,9 +94,9 @@ RUN git clone https://github.com/abseil/abseil-cpp.git && \
     ldconfig
 
 # Install CUDSS based on architecture
-RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
-    dpkg -i cudss-local-repo-ubuntu2404-0.5.0_0.5.0-1_${CUDSS_ARCH}.deb && \
-    cp /var/cudss-local-repo-ubuntu2404-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ && \
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.7.1/local_installers/cudss-local-repo-ubuntu2404-0.7.1_0.7.1-1_${CUDSS_ARCH}.deb && \
+    dpkg -i cudss-local-repo-ubuntu2404-0.7.1_0.7.1-1_${CUDSS_ARCH}.deb && \
+    cp /var/cudss-local-repo-ubuntu2404-0.7.1/cudss-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && \
     apt-get -y install cudss && \
     rm -rf /var/lib/apt/lists/*
@@ -149,7 +150,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 RUN git clone https://github.com/ArthurBrussee/brush.git && \
     cd brush && \
     cargo build --release && \
-    cp target/release/brush_app /usr/local/bin/brush
+    cp target/release/brush /usr/local/bin/brush
 
 RUN cargo install rerun-cli
 
@@ -200,10 +201,9 @@ ENV CUDA_PATH=$CUDA_ROOT
 ENV PATH=$CUDA_ROOT/nvvm/lib64:/usr/local/bin:$PATH
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 
-#SHELL ["/bin/bash", "-c"] 
+#SHELL ["/bin/bash", "-c"]
 # Install runtime dependencies including CUDA and cuDNN
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${NV_CUDNN_PACKAGE} \
     imagemagick \
     wget \
     jq \
@@ -215,10 +215,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglu1-mesa \
     libgl1-mesa-dev \
     libglew-dev \
+    openimageio-tools \
     libosmesa6-dev \
     libx11-xcb-dev \
     libxkbcommon-dev \
     libwayland-dev \
+    libmkl-full-dev \
     libxrandr-dev \
     libegl1-mesa-dev \
     libboost-program-options-dev \
@@ -238,8 +240,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libqt5opengl5-dev \
     libcgal-dev \
     libcurl4-openssl-dev \       
-    nvidia-driver-550 \
-    nvidia-utils-550 \
+    nvidia-driver-580 \
+    libopenimageio-dev \
+    nvidia-utils-580 \
     && apt-mark hold ${NV_CUDNN_PACKAGE_NAME} \
     && rm -rf /var/lib/apt/lists/*
 
@@ -254,27 +257,27 @@ RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_install
 COPY colmap.sh /workspace/colmap.sh
 RUN chmod +x /workspace/colmap.sh
 ENV RUST_LOG=info
-#ENTRYPOINT ["sh","/workspace/colmap.sh"]
+ENTRYPOINT ["sh","/workspace/colmap.sh"]
 
 # Install Python and FastAPI dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-dev \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install -y --no-install-recommends \
+#    python3-pip \
+#    python3-dev \
+#    python3-venv \
+#    && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment
-ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+#ENV VIRTUAL_ENV=/opt/venv
+#RUN python3 -m venv $VIRTUAL_ENV
+#ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install Python packages
-RUN pip install fastapi uvicorn python-multipart pydantic
+#RUN pip install fastapi uvicorn python-multipart pydantic
 
 # Copy API file
-COPY ./api/api.py /workspace/api.py
+#COPY ./api/api.py /workspace/api.py
 
 # Add a new entrypoint script that can run either the API or COLMAP
-COPY api_entrypoint.sh /workspace/entrypoint.sh
-RUN chmod +x /workspace/entrypoint.sh
-ENTRYPOINT ["sh","/workspace/entrypoint.sh"]
+#COPY api_entrypoint.sh /workspace/entrypoint.sh
+#RUN chmod +x /workspace/entrypoint.sh
+#ENTRYPOINT ["sh","/workspace/entrypoint.sh"]
