@@ -18,9 +18,10 @@ RUN nix profile add \
         nixpkgs#jq \
          --extra-experimental-features nix-command --extra-experimental-features flakes --impure
 
-COPY colmap.sh /workspace/colmap.sh
-RUN chmod +x /workspace/colmap.sh
 RUN nix-store --gc --print-roots | egrep -v "^(/nix/var|/run/\w+-system|\{memory|/proc)"
 RUN nix-collect-garbage
+
+COPY colmap.sh /workspace/colmap.sh
+RUN chmod +x /workspace/colmap.sh
 
 ENTRYPOINT ["sh", "/workspace/colmap.sh"]
