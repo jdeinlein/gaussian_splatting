@@ -7,7 +7,7 @@ if [ -z "$BASH_VERSION" ]; then
     exec bash "$0" "$@"
 fi
 # START LOGGING
-LOG_FILE="/workspace/colmap_process.log"
+LOG_FILE="/workspace/out/colmap_process.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 echo "Pipeline execution started at $(date)"
 # Default paths and variables
