@@ -10,14 +10,14 @@ VOLUME ["/workspace/out"]
 
 RUN nix-channel --update && \
         nix profile add \
-        nixpkgs#colmapWithCuda \
-        nixpkgs#imagemagick \
-        nixpkgs#ffmpeg_7-headless \
-        nixpkgs#linuxKernel.packages.linux_xanmod_stable.nvidia_x11_vulkan_beta \
-        nixpkgs#jq \
+        #nixpkgs#colmapWithCuda \
+        #nixpkgs#imagemagick \
+        #nixpkgs#ffmpeg_7-headless \
+        #nixpkgs#linuxKernel.packages.linux_xanmod_stable.nvidia_x11_vulkan_beta \
+        #nixpkgs#jq \
         nixpkgs#python3 \
         nixpkgs#uv \
-        nixpkgs#brush-splat \
+        #nixpkgs#brush-splat \
          --extra-experimental-features nix-command --extra-experimental-features flakes --impure && \
         nix-store --gc --print-roots | egrep -v "^(/nix/var|/run/\w+-system|\{memory|/proc)" && \
         nix-collect-garbage
