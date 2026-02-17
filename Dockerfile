@@ -15,7 +15,6 @@ RUN nix-channel --update && \
         #nixpkgs#ffmpeg_7-headless \
         #nixpkgs#linuxKernel.packages.linux_xanmod_stable.nvidia_x11_vulkan_beta \
         #nixpkgs#jq \
-        nixpkgs#python3 \
         nixpkgs#uv \
         #nixpkgs#brush-splat \
          --extra-experimental-features nix-command --extra-experimental-features flakes --impure && \
@@ -26,10 +25,11 @@ RUN nix-channel --update && \
 #    cd brushnix && \
 #    nix build --experimental-features 'nix-command flakes' --impure && \
 #    nix-collect-garbage
-COPY prefect-docker-worker /workspace/prefect-docker-worker/
+COPY prefect-docker-worker/ /workspace/
 COPY workflow.sh /workspace/colmap.sh
 
-RUN cd /workspace/prefect-docker-worker && uv sync --no-dev --frozen
-RUN chmod +x /workspace/colmap.sh
+RUN uv python install 3.13 --default
+RUN nix build --extra-experimental-features nix-command --extra-experimental-features flakes --impure
+#RUN chmod +x /workspace/colmap.sh
 
 ENTRYPOINT []

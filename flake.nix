@@ -64,36 +64,12 @@
 
     in
     {
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          pythonSet = pythonSets.${system};
-          package = pythonSet.prefect-docker-worker;
-        in
-        {
-          default = pkgs.runCommand "prefect-docker-worker-wrapped" {
-            buildInputs = [ pkgs.makeWrapper ];
-            preferLocalBuild = true;
-          } ''
-            mkdir -p $out/bin
-            mkdir -p $out/lib
-            cp -r ${package}/bin/* $out/bin/
-            cp -r ${package}/lib $out/
-            
-            # Wrap the entry point to set PYTHONPATH
-            wrapProgram $out/bin/prefect-docker-worker \
-              --set PYTHONPATH "${package}/lib/python3.13/site-packages"
-          '';
-        }
-      );
-
       devShells = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           pythonSet = pythonSets.${system}.overrideScope editableOverlay;
-          virtualenv = pythonSet.mkVirtualEnv "dev-env" workspace.deps.all;
+          virtualenv = pythonSet.mkVirtualEnv "hello-world-dev-env" workspace.deps.all;
         in
         {
           default = pkgs.mkShell {
@@ -109,10 +85,13 @@
             shellHook = ''
               unset PYTHONPATH
               export REPO_ROOT=$(git rev-parse --show-toplevel)
-              export PATH="${virtualenv}/bin:$PATH"
             '';
           };
         }
       );
+
+      packages = forAllSystems (system: {
+        default = pythonSets.${system}.mkVirtualEnv "hello-world-env" workspace.deps.default;
+      });
     };
 }

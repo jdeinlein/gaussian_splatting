@@ -393,15 +393,15 @@ wheels = [
 
 [[package]]
 name = "fakeredis"
-version = "2.33.0"
+version = "2.34.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "redis" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/f9/57464119936414d60697fcbd32f38909bb5688b616ae13de6e98384433e0/fakeredis-2.33.0.tar.gz", hash = "sha256:d7bc9a69d21df108a6451bbffee23b3eba432c21a654afc7ff2d295428ec5770", size = 175187, upload-time = "2025-12-16T19:45:52.269Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/44/c403963727d707e03f49a417712b0a23e853d33ae50729679040b6cfe281/fakeredis-2.34.0.tar.gz", hash = "sha256:72bc51a7ab39bedf5004f0cf1b5206822619c1be8c2657fd878d1f4250256c57", size = 177156, upload-time = "2026-02-16T15:56:34.318Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/78/a850fed8aeef96d4a99043c90b818b2ed5419cd5b24a4049fd7cfb9f1471/fakeredis-2.33.0-py3-none-any.whl", hash = "sha256:de535f3f9ccde1c56672ab2fdd6a8efbc4f2619fc2f1acc87b8737177d71c965", size = 119605, upload-time = "2025-12-16T19:45:51.08Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/8e/af19c00753c432355f9b76cec3ab0842578de43ba575e82735b18c1b3ec9/fakeredis-2.34.0-py3-none-any.whl", hash = "sha256:bc45d362c6cc3a537f8287372d8ea532538dfbe7f5d635d0905d7b3464ec51d2", size = 122063, upload-time = "2026-02-16T15:56:21.227Z" },
 ]
 
 [package.optional-dependencies]
@@ -974,57 +974,6 @@ wheels = [
 ]
 
 [[package]]
-name = "prefect-client"
-version = "3.6.17"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "amplitude-analytics" },
-    { name = "anyio" },
-    { name = "asgi-lifespan" },
-    { name = "cachetools" },
-    { name = "cloudpickle" },
-    { name = "coolname" },
-    { name = "dateparser" },
-    { name = "exceptiongroup" },
-    { name = "fastapi" },
-    { name = "fsspec" },
-    { name = "graphviz" },
-    { name = "griffe" },
-    { name = "httpcore" },
-    { name = "httpx", extra = ["http2"] },
-    { name = "humanize" },
-    { name = "jsonpatch" },
-    { name = "jsonschema" },
-    { name = "opentelemetry-api" },
-    { name = "orjson" },
-    { name = "packaging" },
-    { name = "pathspec" },
-    { name = "prometheus-client" },
-    { name = "pydantic" },
-    { name = "pydantic-core" },
-    { name = "pydantic-extra-types" },
-    { name = "pydantic-settings" },
-    { name = "python-dateutil" },
-    { name = "python-slugify" },
-    { name = "pytz" },
-    { name = "pyyaml" },
-    { name = "rfc3339-validator" },
-    { name = "rich" },
-    { name = "ruamel-yaml" },
-    { name = "ruamel-yaml-clib", marker = "platform_python_implementation == 'CPython'" },
-    { name = "sniffio" },
-    { name = "toml" },
-    { name = "typing-extensions" },
-    { name = "uvicorn" },
-    { name = "websockets" },
-    { name = "whenever" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/c6/e53f72f7cb881c6dc3c6a9624d63b46b93834ef01edb358da10dd26cdd93/prefect_client-3.6.17.tar.gz", hash = "sha256:293f975b888d1d59bea09ff514e467f0ba3892e5af9eb3e8649a467619db7cc5", size = 760985, upload-time = "2026-02-12T20:56:17.661Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/82/58623194041042cdf9972594ba9c596eefea1cf1aa471335572c68e8a307/prefect_client-3.6.17-py3-none-any.whl", hash = "sha256:7390b679f53624ccac248fb1cb0fef6bbb94f16c6e86d6f62eaac25ca719be87", size = 941022, upload-time = "2026-02-12T20:56:16.03Z" },
-]
-
-[[package]]
 name = "prefect-docker"
 version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1044,14 +993,12 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "prefect" },
-    { name = "prefect-client" },
     { name = "prefect-docker" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "prefect", specifier = ">=3.6.17" },
-    { name = "prefect-client", specifier = ">=3.6.17" },
     { name = "prefect-docker", specifier = ">=0.7.1" },
 ]
 
@@ -1066,15 +1013,15 @@ wheels = [
 
 [[package]]
 name = "py-key-value-aio"
-version = "0.4.2"
+version = "0.4.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beartype" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/6b/fc3524e6ea04f5a00cb4cc8c09216fcb0fa0546267e07895ba87f8f7ffb2/py_key_value_aio-0.4.2.tar.gz", hash = "sha256:7bbe31d3ce8ee4f7802f34dcc12df23f0a9715c9660b7db34973bb28727dee1b", size = 91129, upload-time = "2026-02-16T02:02:39.796Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/3c/0397c072a38d4bc580994b42e0c90c5f44f679303489e4376289534735e5/py_key_value_aio-0.4.4.tar.gz", hash = "sha256:e3012e6243ed7cc09bb05457bd4d03b1ba5c2b1ca8700096b3927db79ffbbe55", size = 92300, upload-time = "2026-02-16T21:21:43.245Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/00/e280faf3b15a10eca20a8b68a1cbf1f9b42635a19b350a67ed7db02d3b28/py_key_value_aio-0.4.2-py3-none-any.whl", hash = "sha256:04dd01caec58819834f1256e56e4547da4b4f4fecad8784d5574fa5cba15ff82", size = 150703, upload-time = "2026-02-16T02:02:37.603Z" },
+    { url = "https://files.pythonhosted.org/packages/32/69/f1b537ee70b7def42d63124a539ed3026a11a3ffc3086947a1ca6e861868/py_key_value_aio-0.4.4-py3-none-any.whl", hash = "sha256:18e17564ecae61b987f909fc2cd41ee2012c84b4b1dcb8c055cf8b4bc1bf3f5d", size = 152291, upload-time = "2026-02-16T21:21:44.241Z" },
 ]
 
 [package.optional-dependencies]
@@ -1331,11 +1278,11 @@ wheels = [
 
 [[package]]
 name = "redis"
-version = "7.1.1"
+version = "7.2.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f7/80/2971931d27651affa88a44c0ad7b8c4a19dc29c998abb20b23868d319b59/redis-7.1.1.tar.gz", hash = "sha256:a2814b2bda15b39dad11391cc48edac4697214a8a5a4bd10abe936ab4892eb43", size = 4800064, upload-time = "2026-02-09T18:39:40.292Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/32/6fac13a11e73e1bc67a2ae821a72bfe4c2d8c4c48f0267e4a952be0f1bae/redis-7.2.0.tar.gz", hash = "sha256:4dd5bf4bd4ae80510267f14185a15cba2a38666b941aff68cccf0256b51c1f26", size = 4901247, upload-time = "2026-02-16T17:16:22.797Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/55/1de1d812ba1481fa4b37fb03b4eec0fcb71b6a0d44c04ea3482eb017600f/redis-7.1.1-py3-none-any.whl", hash = "sha256:f77817f16071c2950492c67d40b771fa493eb3fccc630a424a10976dbb794b7a", size = 356057, upload-time = "2026-02-09T18:39:38.602Z" },
+    { url = "https://files.pythonhosted.org/packages/86/cf/f6180b67f99688d83e15c84c5beda831d1d341e95872d224f87ccafafe61/redis-7.2.0-py3-none-any.whl", hash = "sha256:01f591f8598e483f1842d429e8ae3a820804566f1c73dca1b80e23af9fba0497", size = 394898, upload-time = "2026-02-16T17:16:20.693Z" },
 ]
 
 [[package]]
@@ -1762,15 +1709,15 @@ wheels = [
 
 [[package]]
 name = "uvicorn"
-version = "0.40.0"
+version = "0.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "h11" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c3/d1/8f3c683c9561a4e6689dd3b1d345c815f10f86acd044ee1fb9a4dcd0b8c5/uvicorn-0.40.0.tar.gz", hash = "sha256:839676675e87e73694518b5574fd0f24c9d97b46bea16df7b8c05ea1a51071ea", size = 81761, upload-time = "2025-12-21T14:16:22.45Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/32/ce/eeb58ae4ac36fe09e3842eb02e0eb676bf2c53ae062b98f1b2531673efdd/uvicorn-0.41.0.tar.gz", hash = "sha256:09d11cf7008da33113824ee5a1c6422d89fbc2ff476540d69a34c87fab8b571a", size = 82633, upload-time = "2026-02-16T23:07:24.1Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/d8/2083a1daa7439a66f3a48589a57d576aa117726762618f6bb09fe3798796/uvicorn-0.40.0-py3-none-any.whl", hash = "sha256:c6c8f55bc8bf13eb6fa9ff87ad62308bbbc33d0b67f84293151efe87e0d5f2ee", size = 68502, upload-time = "2025-12-21T14:16:21.041Z" },
+    { url = "https://files.pythonhosted.org/packages/83/e4/d04a086285c20886c0daad0e026f250869201013d18f81d9ff5eada73a88/uvicorn-0.41.0-py3-none-any.whl", hash = "sha256:29e35b1d2c36a04b9e180d4007ede3bcb32a85fbdfd6c6aeb3f26839de088187", size = 68783, upload-time = "2026-02-16T23:07:22.357Z" },
 ]
 
 [[package]]
