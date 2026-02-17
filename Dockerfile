@@ -13,15 +13,24 @@ RUN nix-channel --update && \
         nixpkgs#colmapWithCuda \
         nixpkgs#imagemagick \
         nixpkgs#ffmpeg_7-headless \
-        nixpkgs#brush-splat \
         nixpkgs#linuxKernel.packages.linux_xanmod_stable.nvidia_x11_vulkan_beta \
         nixpkgs#jq \
-        nixpkgs#gawk \
+        nixpkgs#python3 \
+        nixpkgs#uv \
+        nixpkgs#brush-splat \
          --extra-experimental-features nix-command --extra-experimental-features flakes --impure && \
         nix-store --gc --print-roots | egrep -v "^(/nix/var|/run/\w+-system|\{memory|/proc)" && \
         nix-collect-garbage
 
-COPY colmap.sh /workspace/colmap.sh
+#RUN git clone https://github.com/jdeinlein/brushnix.git && \
+#    cd brushnix && \
+#    nix build --experimental-features 'nix-command flakes' --impure && \
+#    nix-collect-garbage
+COPY prefect-docker-worker/pyproject.toml /workspace/pyproject.toml
+COPY prefect-docker-worker/uv.lock /workspace/uv.lock
+COPY workflow.sh /workspace/colmap.sh
+
+RUN uv sync --no-dev --frozen
 RUN chmod +x /workspace/colmap.sh
 
-ENTRYPOINT ["sh", "/workspace/colmap.sh"]
+ENTRYPOINT []

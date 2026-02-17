@@ -1,0 +1,21 @@
+[project]
+name = "prefect-docker-worker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "mark doerr", email = "mark.doerr@uni-greifswald.de" }
+]
+requires-python = ">=3.13.3"
+dependencies = [
+    "prefect>=3.6.17",
+    "prefect-client>=3.6.17",
+    "prefect-docker>=0.7.1",
+]
+
+[project.scripts]
+prefect-docker-worker = "prefect_docker_worker:main"
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
