@@ -26,12 +26,10 @@ RUN nix-channel --update && \
 #    cd brushnix && \
 #    nix build --experimental-features 'nix-command flakes' --impure && \
 #    nix-collect-garbage
-COPY prefect-docker-worker/pyproject.toml /workspace/pyproject.toml
-COPY prefect-docker-worker/uv.lock /workspace/uv.lock
-COPY prefect-docker-worker/src /workspace/src
+COPY prefect-docker-worker /workspace/prefect-docker-worker/
 COPY workflow.sh /workspace/colmap.sh
 
-RUN uv sync --no-dev --frozen
+RUN cd /workspace/prefect-docker-worker && uv sync --no-dev --frozen
 RUN chmod +x /workspace/colmap.sh
 
 ENTRYPOINT []
