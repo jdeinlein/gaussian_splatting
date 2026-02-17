@@ -28,6 +28,7 @@ RUN nix-channel --update && \
 #    nix-collect-garbage
 COPY prefect-docker-worker/pyproject.toml /workspace/pyproject.toml
 COPY prefect-docker-worker/uv.lock /workspace/uv.lock
+COPY prefect-docker-worker/src /workspace/src
 COPY workflow.sh /workspace/colmap.sh
 
 RUN uv sync --no-dev --frozen
